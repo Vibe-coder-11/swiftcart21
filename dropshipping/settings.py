@@ -67,9 +67,9 @@ elif DEBUG:
 else:
     raise ImproperlyConfigured('SECRET_KEY must be set when DEBUG is False.')
 
-ALLOWED_HOSTS = _csv_to_list(config('ALLOWED_HOSTS', default='localhost,127.0.0.1,testserver'))
+ALLOWED_HOSTS = _csv_to_list(config('ALLOWED_HOSTS', default='localhost,127.0.0.1,swiftcart21.onrender.com,testserver'))
 if not ALLOWED_HOSTS:
-    ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'testserver']
+    ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'testserver','swiftcart21.onrender.com']
 
 IS_PRODUCTION = _to_bool(config('DJANGO_PRODUCTION', default='False'), default=False)
 if not IS_PRODUCTION and not DEBUG:
@@ -493,5 +493,6 @@ TAX_RATE = config('TAX_RATE', default=0.18, cast=float)  # 18% GST
 
 # Frontend URL for email verification and password reset
 FRONTEND_URL = config('FRONTEND_URL', default='http://localhost:3000')
+
 
 
