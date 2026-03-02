@@ -542,4 +542,3 @@ TAX_RATE = config('TAX_RATE', default=0.18, cast=float)  # 18% GST
 
 # Frontend URL for email verification and password reset
 FRONTEND_URL = config('FRONTEND_URL', default='http://localhost:3000')
-
