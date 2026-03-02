@@ -68,7 +68,7 @@ else:
 
 ALLOWED_HOSTS = _csv_to_list(config('ALLOWED_HOSTS', default='localhost,127.0.0.1,testserver,swiftcart21.onrender.com'))
 if not ALLOWED_HOSTS:
-    ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'testserver']
+    ALLOWED_HOSTS = ['localhost', '127.0.0.1','swiftcart21.onrender.com', 'testserver']
 
 IS_PRODUCTION = _to_bool(config('DJANGO_PRODUCTION', default='False'), default=False)
 if not IS_PRODUCTION and not DEBUG:
