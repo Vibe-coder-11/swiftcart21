@@ -54,28 +54,37 @@ def _read_config(name, default=''):
     return str(config(name, default=default)).strip()
 
 
-RENDER_EXTERNAL_HOSTNAME = _read_config('RENDER_EXTERNAL_HOSTNAME', '')
-RUNNING_ON_RENDER = _to_bool(os.getenv('RENDER', _read_config('RENDER', 'False')), default=False) or bool(RENDER_EXTERNAL_HOSTNAME)
+def _env_or_config(name, default=''):
+    # Process env wins over .env values if present.
+    if name in os.environ:
+        return str(os.environ.get(name, '')).strip()
+    return _read_config(name, default)
+
+
+RENDER_EXTERNAL_HOSTNAME = str(os.getenv('RENDER_EXTERNAL_HOSTNAME', '')).strip()
+RUNNING_ON_RENDER = (
+    _to_bool(os.getenv('RENDER', 'False'), default=False)
+    or bool(RENDER_EXTERNAL_HOSTNAME)
+    or bool(str(os.getenv('RENDER_SERVICE_ID', '')).strip())
+    or bool(str(os.getenv('RENDER_INSTANCE_ID', '')).strip())
+)
 
 
 def _db_value(name, default=''):
     """
-    On Render, prefer runtime environment variables over repository .env defaults.
-    This prevents accidental localhost DB settings from being used in production.
+    Use runtime environment values when present; otherwise fallback to .env.
     """
-    if RUNNING_ON_RENDER:
-        return str(os.getenv(name, default)).strip()
-    return _read_config(name, default)
+    return _env_or_config(name, default)
 
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-_raw_secret_key = _read_config('SECRET_KEY', '')
+_raw_secret_key = _env_or_config('SECRET_KEY', '')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = _to_bool(_read_config('DEBUG', 'True'), default=True)
+DEBUG = _to_bool(_env_or_config('DEBUG', 'True'), default=True)
 if RUNNING_ON_RENDER:
     # Never default to DEBUG=True on hosted runtime.
     DEBUG = _to_bool(os.getenv('DEBUG', 'False'), default=False)
@@ -88,13 +97,13 @@ elif DEBUG:
 else:
     raise ImproperlyConfigured('SECRET_KEY must be set when DEBUG is False.')
 
-ALLOWED_HOSTS = _csv_to_list(config('ALLOWED_HOSTS', default='localhost,127.0.0.1,testserver'))
+ALLOWED_HOSTS = _csv_to_list(_env_or_config('ALLOWED_HOSTS', 'localhost,127.0.0.1,testserver'))
 if not ALLOWED_HOSTS:
     ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'testserver']
 if RENDER_EXTERNAL_HOSTNAME and RENDER_EXTERNAL_HOSTNAME not in ALLOWED_HOSTS:
     ALLOWED_HOSTS.append(RENDER_EXTERNAL_HOSTNAME)
 
-IS_PRODUCTION = _to_bool(config('DJANGO_PRODUCTION', default='False'), default=False)
+IS_PRODUCTION = _to_bool(_env_or_config('DJANGO_PRODUCTION', 'False'), default=False)
 if not IS_PRODUCTION and not DEBUG:
     IS_PRODUCTION = any(not _is_local_host(host) for host in ALLOWED_HOSTS)
 
@@ -185,7 +194,7 @@ if not DATABASE_URL:
 if not DATABASE_URL:
     DATABASE_URL = _db_value('POSTGRESQL_URL', '')
 
-RAW_DB_ENGINE = config('DB_ENGINE', default='').strip()
+RAW_DB_ENGINE = _db_value('DB_ENGINE', '')
 DB_ENGINE_ALIASES = {
     'sqlite3': 'django.db.backends.sqlite3',
     'postgres': 'django.db.backends.postgresql',
@@ -231,7 +240,7 @@ elif DB_ENGINE:
     db_user = _db_value('DB_USER', '') or _db_value('PGUSER', '')
     db_password = _db_value('DB_PASSWORD', '') or _db_value('PGPASSWORD', '')
     db_host = _db_value('DB_HOST', '') or _db_value('PGHOST', '')
-    db_port = _db_value('DB_PORT', '') or _db_value('PGPORT', '')
+    db_port = _db_value('DB_PORT', '') or _db_value('PGPORT', '5432')
 
     DATABASES = {
         'default': {
@@ -533,6 +542,4 @@ TAX_RATE = config('TAX_RATE', default=0.18, cast=float)  # 18% GST
 
 # Frontend URL for email verification and password reset
 FRONTEND_URL = config('FRONTEND_URL', default='http://localhost:3000')
-
-
 
