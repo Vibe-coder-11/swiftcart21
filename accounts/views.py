@@ -4,9 +4,10 @@ from django.contrib.auth.tokens import default_token_generator
 from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
 from django.utils.encoding import force_bytes, force_str
 from django.utils.translation import gettext_lazy as _
-from django.core.mail import send_mail
+from django.core.mail import send_mail, get_connection
 from django.conf import settings
 from django.utils import timezone
+from django.db import transaction
 from datetime import timedelta
 from rest_framework import status, generics, permissions
 from rest_framework.decorators import api_view, permission_classes
@@ -14,6 +15,7 @@ from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.db.models import Count, Q
+from threading import Thread
 from .models import User, UserProfile, Address, EmailVerification, PasswordReset
 from .serializers import (
     UserRegistrationSerializer, UserLoginSerializer, UserSerializer,
@@ -25,6 +27,26 @@ import logging
 
 
 logger = logging.getLogger(__name__)
+
+
+def _send_mail_async(subject, message, recipients, *, log_context='email dispatch'):
+    """Send email outside the request cycle so API responses stay fast."""
+    def _runner():
+        try:
+            timeout = getattr(settings, 'EMAIL_TIMEOUT', 10)
+            connection = get_connection(fail_silently=False, timeout=timeout)
+            send_mail(
+                subject,
+                message,
+                settings.DEFAULT_FROM_EMAIL,
+                recipients,
+                fail_silently=False,
+                connection=connection,
+            )
+        except Exception:
+            logger.warning('%s failed', log_context, exc_info=True)
+
+    Thread(target=_runner, daemon=True).start()
 
 
 def _otp_to_uuid(otp):
@@ -149,7 +171,7 @@ class UserRegistrationView(generics.CreateAPIView):
             otp_token = _otp_to_uuid(otp)
             
             # Save or update OTP
-            email_verification, created = EmailVerification.objects.update_or_create(
+            EmailVerification.objects.update_or_create(
                 user=user,
                 defaults={
                     'token': otp_token,
@@ -166,15 +188,15 @@ class UserRegistrationView(generics.CreateAPIView):
                 f'Please enter this OTP on the verification page.\n\n'
                 f'Thank you!'
             )
-            
-            send_mail(
-                subject,
-                message,
-                settings.DEFAULT_FROM_EMAIL,
-                [user.email],
-                fail_silently=False,
+
+            transaction.on_commit(
+                lambda: _send_mail_async(
+                    subject,
+                    message,
+                    [user.email],
+                    log_context='Verification OTP email dispatch'
+                )
             )
-            
         except Exception:
             # Do not fail registration if mail provider has transient issues.
             logger.warning('Failed to send verification OTP email', exc_info=True)
@@ -235,7 +257,7 @@ class UserProfileView(generics.RetrieveUpdateAPIView):
     parser_classes = [MultiPartParser, FormParser, JSONParser]
     
     def get_object(self):
-        profile, created = UserProfile.objects.get_or_create(user=self.request.user)
+        profile, _ = UserProfile.objects.get_or_create(user=self.request.user)
         return profile
 
 class UserDetailView(generics.RetrieveUpdateAPIView):
@@ -303,13 +325,13 @@ class PasswordResetView(generics.GenericAPIView):
                     f'This link will expire in 1 hour.\n\n'
                     f'Thank you!'
                 )
-
-                send_mail(
-                    subject,
-                    message,
-                    settings.DEFAULT_FROM_EMAIL,
-                    [user.email],
-                    fail_silently=False,
+                transaction.on_commit(
+                    lambda: _send_mail_async(
+                        subject,
+                        message,
+                        [user.email],
+                        log_context='Password reset email dispatch'
+                    )
                 )
             except Exception:
                 logger.warning('Password reset email dispatch failed', exc_info=True)
@@ -429,7 +451,7 @@ def resend_verification_email(request):
     otp_token = _otp_to_uuid(otp)
 
     expires_at = timezone.now() + timedelta(hours=1)
-    email_verification = EmailVerification.objects.create(
+    EmailVerification.objects.create(
         user=user,
         token=otp_token,
         expires_at=expires_at
@@ -444,16 +466,13 @@ def resend_verification_email(request):
         f'Please enter this OTP on the verification page.\n\n'
         f'Thank you!'
     )
-    
-    try:
-        send_mail(
+    transaction.on_commit(
+        lambda: _send_mail_async(
             subject,
             message,
-            settings.DEFAULT_FROM_EMAIL,
             [user.email],
-            fail_silently=False,
+            log_context='Resend verification OTP email dispatch'
         )
-    except Exception:
-        logger.warning('Resend verification OTP email failed', exc_info=True)
+    )
 
     return Response({'message': generic_message})
