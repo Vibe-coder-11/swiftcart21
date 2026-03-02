@@ -66,7 +66,7 @@ elif DEBUG:
 else:
     raise ImproperlyConfigured('SECRET_KEY must be set when DEBUG is False.')
 
-ALLOWED_HOSTS = _csv_to_list(config('ALLOWED_HOSTS', default='localhost,127.0.0.1,testserver'))
+ALLOWED_HOSTS = _csv_to_list(config('ALLOWED_HOSTS', default='localhost,127.0.0.1,testserver,swiftcart21.onrender.com'))
 if not ALLOWED_HOSTS:
     ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'testserver']
 
