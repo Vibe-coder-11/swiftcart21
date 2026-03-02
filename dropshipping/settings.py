@@ -50,14 +50,35 @@ def _is_local_host(host):
     return normalized in {'localhost', '127.0.0.1', 'testserver'}
 
 
+def _read_config(name, default=''):
+    return str(config(name, default=default)).strip()
+
+
+RENDER_EXTERNAL_HOSTNAME = _read_config('RENDER_EXTERNAL_HOSTNAME', '')
+RUNNING_ON_RENDER = _to_bool(os.getenv('RENDER', _read_config('RENDER', 'False')), default=False) or bool(RENDER_EXTERNAL_HOSTNAME)
+
+
+def _db_value(name, default=''):
+    """
+    On Render, prefer runtime environment variables over repository .env defaults.
+    This prevents accidental localhost DB settings from being used in production.
+    """
+    if RUNNING_ON_RENDER:
+        return str(os.getenv(name, default)).strip()
+    return _read_config(name, default)
+
+
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-_raw_secret_key = config('SECRET_KEY', default='').strip()
+_raw_secret_key = _read_config('SECRET_KEY', '')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = _to_bool(config('DEBUG', default='True'), default=True)
+DEBUG = _to_bool(_read_config('DEBUG', 'True'), default=True)
+if RUNNING_ON_RENDER:
+    # Never default to DEBUG=True on hosted runtime.
+    DEBUG = _to_bool(os.getenv('DEBUG', 'False'), default=False)
 
 if _raw_secret_key:
     SECRET_KEY = _raw_secret_key
@@ -67,9 +88,11 @@ elif DEBUG:
 else:
     raise ImproperlyConfigured('SECRET_KEY must be set when DEBUG is False.')
 
-ALLOWED_HOSTS = _csv_to_list(config('ALLOWED_HOSTS', default='localhost,127.0.0.1,swiftcart21.onrender.com,testserver'))
+ALLOWED_HOSTS = _csv_to_list(config('ALLOWED_HOSTS', default='localhost,127.0.0.1,testserver'))
 if not ALLOWED_HOSTS:
-    ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'testserver','swiftcart21.onrender.com']
+    ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'testserver']
+if RENDER_EXTERNAL_HOSTNAME and RENDER_EXTERNAL_HOSTNAME not in ALLOWED_HOSTS:
+    ALLOWED_HOSTS.append(RENDER_EXTERNAL_HOSTNAME)
 
 IS_PRODUCTION = _to_bool(config('DJANGO_PRODUCTION', default='False'), default=False)
 if not IS_PRODUCTION and not DEBUG:
@@ -156,7 +179,11 @@ WSGI_APPLICATION = 'dropshipping.wsgi.application'
 # 1) DATABASE_URL (common on Render/Railway/Heroku)
 # 2) DB_ENGINE + DB_NAME + DB_USER + DB_PASSWORD + DB_HOST + DB_PORT
 # 3) Local SQLite fallback for development
-DATABASE_URL = config('DATABASE_URL', default='').strip()
+DATABASE_URL = _db_value('DATABASE_URL', '')
+if not DATABASE_URL:
+    DATABASE_URL = _db_value('POSTGRES_URL', '')
+if not DATABASE_URL:
+    DATABASE_URL = _db_value('POSTGRESQL_URL', '')
 
 RAW_DB_ENGINE = config('DB_ENGINE', default='').strip()
 DB_ENGINE_ALIASES = {
@@ -200,18 +227,24 @@ if DATABASE_URL:
         raise ImproperlyConfigured(f"Unsupported DATABASE_URL scheme: '{scheme}'")
 elif DB_ENGINE:
     default_db_name = str(BASE_DIR / 'db.sqlite3') if DB_ENGINE == 'django.db.backends.sqlite3' else ''
+    db_name = _db_value('DB_NAME', '') or _db_value('PGDATABASE', default_db_name)
+    db_user = _db_value('DB_USER', '') or _db_value('PGUSER', '')
+    db_password = _db_value('DB_PASSWORD', '') or _db_value('PGPASSWORD', '')
+    db_host = _db_value('DB_HOST', '') or _db_value('PGHOST', '')
+    db_port = _db_value('DB_PORT', '') or _db_value('PGPORT', '')
+
     DATABASES = {
         'default': {
             'ENGINE': DB_ENGINE,
-            'NAME': config('DB_NAME', default=default_db_name),
+            'NAME': db_name,
         }
     }
     if DB_ENGINE != 'django.db.backends.sqlite3':
         DATABASES['default'].update({
-            'USER': config('DB_USER', default=''),
-            'PASSWORD': config('DB_PASSWORD', default=''),
-            'HOST': config('DB_HOST', default='localhost'),
-            'PORT': config('DB_PORT', default=''),
+            'USER': db_user,
+            'PASSWORD': db_password,
+            'HOST': db_host,
+            'PORT': db_port,
         })
 else:
     DATABASES = {
@@ -225,6 +258,13 @@ if IS_PRODUCTION and DATABASES['default']['ENGINE'] == 'django.db.backends.sqlit
     raise ImproperlyConfigured(
         'SQLite is not supported in production. Configure PostgreSQL with DATABASE_URL or DB_* variables.'
     )
+
+if RUNNING_ON_RENDER and DATABASES['default']['ENGINE'] == 'django.db.backends.postgresql':
+    db_host = (DATABASES['default'].get('HOST') or '').strip()
+    if _is_local_host(db_host):
+        raise ImproperlyConfigured(
+            'Render runtime is trying to use localhost PostgreSQL. Set DATABASE_URL from your Render PostgreSQL service.'
+        )
 
 
 # Password validation
