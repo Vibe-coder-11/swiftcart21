@@ -13,6 +13,7 @@ https://docs.djangoproject.com/en/5.0/ref/settings/
 from pathlib import Path
 from decouple import config
 import os
+from urllib.parse import parse_qs, unquote, urlparse
 from django.core.exceptions import ImproperlyConfigured
 from django.core.management.utils import get_random_secret_key
 
@@ -66,9 +67,9 @@ elif DEBUG:
 else:
     raise ImproperlyConfigured('SECRET_KEY must be set when DEBUG is False.')
 
-ALLOWED_HOSTS = _csv_to_list(config('ALLOWED_HOSTS', default='localhost,127.0.0.1,testserver,swiftcart21.onrender.com'))
+ALLOWED_HOSTS = _csv_to_list(config('ALLOWED_HOSTS', default='localhost,127.0.0.1,testserver'))
 if not ALLOWED_HOSTS:
-    ALLOWED_HOSTS = ['localhost', '127.0.0.1','swiftcart21.onrender.com', 'testserver']
+    ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'testserver']
 
 IS_PRODUCTION = _to_bool(config('DJANGO_PRODUCTION', default='False'), default=False)
 if not IS_PRODUCTION and not DEBUG:
@@ -151,7 +152,12 @@ WSGI_APPLICATION = 'dropshipping.wsgi.application'
 
 # Database
 # https://docs.djangoproject.com/en/5.0/ref/settings/#databases
-# Set DB_ENGINE in .env to enable external DB config (DB_NAME, DB_USER, DB_PASSWORD, DB_HOST, DB_PORT).
+# Priority:
+# 1) DATABASE_URL (common on Render/Railway/Heroku)
+# 2) DB_ENGINE + DB_NAME + DB_USER + DB_PASSWORD + DB_HOST + DB_PORT
+# 3) Local SQLite fallback for development
+DATABASE_URL = config('DATABASE_URL', default='').strip()
+
 RAW_DB_ENGINE = config('DB_ENGINE', default='').strip()
 DB_ENGINE_ALIASES = {
     'sqlite3': 'django.db.backends.sqlite3',
@@ -161,17 +167,43 @@ DB_ENGINE_ALIASES = {
 }
 DB_ENGINE = DB_ENGINE_ALIASES.get(RAW_DB_ENGINE, RAW_DB_ENGINE)
 
-# Force SQLite for now to fix PostgreSQL connection issues
-if DB_ENGINE == 'django.db.backends.postgresql':
-    print("WARNING: PostgreSQL detected, switching to SQLite for development")
-    DB_ENGINE = 'django.db.backends.sqlite3'
+if DATABASE_URL:
+    parsed = urlparse(DATABASE_URL)
+    scheme = (parsed.scheme or '').lower()
 
-if DB_ENGINE:
-    DEFAULT_DB_NAME = str(BASE_DIR / 'db.sqlite3') if DB_ENGINE == 'django.db.backends.sqlite3' else ''
+    if scheme in {'postgres', 'postgresql'}:
+        DATABASES = {
+            'default': {
+                'ENGINE': 'django.db.backends.postgresql',
+                'NAME': unquote((parsed.path or '').lstrip('/')),
+                'USER': unquote(parsed.username or ''),
+                'PASSWORD': unquote(parsed.password or ''),
+                'HOST': parsed.hostname or '',
+                'PORT': str(parsed.port or ''),
+            }
+        }
+
+        query_params = parse_qs(parsed.query or '')
+        ssl_mode = (query_params.get('sslmode') or [''])[0]
+        if ssl_mode:
+            DATABASES['default']['OPTIONS'] = {'sslmode': ssl_mode}
+    elif scheme in {'sqlite', 'sqlite3'}:
+        sqlite_path = unquote((parsed.path or '').lstrip('/'))
+        sqlite_name = sqlite_path if os.path.isabs(sqlite_path) else str(BASE_DIR / sqlite_path)
+        DATABASES = {
+            'default': {
+                'ENGINE': 'django.db.backends.sqlite3',
+                'NAME': sqlite_name,
+            }
+        }
+    else:
+        raise ImproperlyConfigured(f"Unsupported DATABASE_URL scheme: '{scheme}'")
+elif DB_ENGINE:
+    default_db_name = str(BASE_DIR / 'db.sqlite3') if DB_ENGINE == 'django.db.backends.sqlite3' else ''
     DATABASES = {
         'default': {
             'ENGINE': DB_ENGINE,
-            'NAME': config('DB_NAME', default=DEFAULT_DB_NAME),
+            'NAME': config('DB_NAME', default=default_db_name),
         }
     }
     if DB_ENGINE != 'django.db.backends.sqlite3':
@@ -182,13 +214,17 @@ if DB_ENGINE:
             'PORT': config('DB_PORT', default=''),
         })
 else:
-    # Safe default for local development
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.sqlite3',
             'NAME': BASE_DIR / 'db.sqlite3',
         }
     }
+
+if IS_PRODUCTION and DATABASES['default']['ENGINE'] == 'django.db.backends.sqlite3':
+    raise ImproperlyConfigured(
+        'SQLite is not supported in production. Configure PostgreSQL with DATABASE_URL or DB_* variables.'
+    )
 
 
 # Password validation
@@ -456,3 +492,4 @@ TAX_RATE = config('TAX_RATE', default=0.18, cast=float)  # 18% GST
 
 # Frontend URL for email verification and password reset
 FRONTEND_URL = config('FRONTEND_URL', default='http://localhost:3000')
+
