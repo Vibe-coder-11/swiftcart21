@@ -465,10 +465,16 @@ STRIPE_PUBLISHABLE_KEY = config('STRIPE_PUBLISHABLE_KEY', default='')
 STRIPE_SECRET_KEY = config('STRIPE_SECRET_KEY', default='')
 
 # Admin credentials and payment destination
-ADMIN_EMAIL = config('ADMIN_EMAIL', default='')
-ADMIN_PASSWORD = config('ADMIN_PASSWORD', default='')
-ADMIN_UPI_ID = config('ADMIN_UPI_ID', default='')
-ALLOW_ENV_ADMIN_SYNC = DEBUG and _to_bool(config('ALLOW_ENV_ADMIN_SYNC', default='False'), default=False)
+ADMIN_EMAIL = (_env_or_config('ADMIN_EMAIL', '') or '').strip().lower()
+ADMIN_PASSWORD = _env_or_config('ADMIN_PASSWORD', '')
+ADMIN_UPI_ID = _env_or_config('ADMIN_UPI_ID', '')
+
+_allow_env_admin_sync_raw = _env_or_config('ALLOW_ENV_ADMIN_SYNC', '')
+if _allow_env_admin_sync_raw:
+    ALLOW_ENV_ADMIN_SYNC = _to_bool(_allow_env_admin_sync_raw, default=False)
+else:
+    # Default to enabled when admin credentials are configured so fresh production DBs can bootstrap login.
+    ALLOW_ENV_ADMIN_SYNC = bool(ADMIN_EMAIL and ADMIN_PASSWORD)
 
 # Redis Configuration
 CELERY_BROKER_URL = config('REDIS_URL', default='redis://localhost:6379/0')
