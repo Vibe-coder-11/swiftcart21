@@ -1,4 +1,4 @@
-﻿{% extends 'core/base.html' %}
+{% extends 'core/base.html' %}
 
 {% block title %}Register - {% if site_settings %}{{ site_settings.site_name }}{% else %}SwiftCart{% endif %}{% endblock %}
 
@@ -178,7 +178,11 @@ document.getElementById('registrationForm').addEventListener('submit', function(
     })
     .then(data => {
         if (data.access) {
-            showNotification('Registration successful! Please check your email for verification.', 'success');
+            const sent = data.verification_email_sent !== false;
+            const message = data.message || (sent
+                ? 'Registration successful! Please check your email for verification.'
+                : 'Registration successful, but OTP email could not be sent right now. Please use Resend OTP.');
+            showNotification(message, sent ? 'success' : 'error');
             // Store tokens
             localStorage.setItem('access_token', data.access);
             localStorage.setItem('refresh_token', data.refresh);
