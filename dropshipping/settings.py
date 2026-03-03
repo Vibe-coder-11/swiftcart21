@@ -104,9 +104,9 @@ elif DEBUG:
 else:
     raise ImproperlyConfigured('SECRET_KEY must be set when DEBUG is False.')
 
-ALLOWED_HOSTS = _csv_to_list(_env_or_config('ALLOWED_HOSTS', 'localhost,127.0.0.1,testserver'))
+ALLOWED_HOSTS = _csv_to_list(_env_or_config('ALLOWED_HOSTS','swiftcart21.onrender.com'))
 if not ALLOWED_HOSTS:
-    ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'testserver']
+    ALLOWED_HOSTS = ['swiftcart21.onrender.com']
 if RENDER_EXTERNAL_HOSTNAME and RENDER_EXTERNAL_HOSTNAME not in ALLOWED_HOSTS:
     ALLOWED_HOSTS.append(RENDER_EXTERNAL_HOSTNAME)
 
