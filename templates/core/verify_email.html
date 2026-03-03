@@ -1,4 +1,4 @@
-﻿{% extends 'core/base.html' %}
+{% extends 'core/base.html' %}
 
 {% block title %}Email Verification - {% if site_settings %}{{ site_settings.site_name }}{% else %}SwiftCart{% endif %}{% endblock %}
 
@@ -144,7 +144,7 @@ function resendOTP() {
     })
     .then(data => {
         if (data.message) {
-            alert('OTP resent! Please check your email.');
+            alert(data.message);
         }
     })
     .catch(error => {
@@ -154,4 +154,6 @@ function resendOTP() {
 }
 </script>
 {% endblock %}
+
+
 
