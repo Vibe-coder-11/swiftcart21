@@ -29,6 +29,8 @@ class ProductSerializer(serializers.ModelSerializer):
     category_name = serializers.CharField(source='category.name', read_only=True)
     is_in_stock = serializers.ReadOnlyField()
     discount_percentage = serializers.ReadOnlyField()
+    images = ProductImageSerializer(many=True, read_only=True)
+    variants = ProductVariantSerializer(many=True, read_only=True)
     
     class Meta:
         model = Product
