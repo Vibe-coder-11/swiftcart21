@@ -1,4 +1,4 @@
-﻿{% extends 'core/base.html' %}
+{% extends 'core/base.html' %}
 
 {% block title %}{{ product.name }} - {% if site_settings %}{{ site_settings.site_name }}{% else %}SwiftCart{% endif %}{% endblock %}
 
@@ -114,6 +114,41 @@
                         </div>
                     </form>
 
+                    <!-- Share Product -->
+                    <div class="border-top pt-3 mb-3">
+                        <h6 class="mb-3">Share Product</h6>
+                        <button
+                            type="button"
+                            class="btn btn-outline-primary w-100 mb-2"
+                            data-bs-toggle="collapse"
+                            data-bs-target="#shareProductOptions"
+                            aria-expanded="false"
+                            aria-controls="shareProductOptions"
+                        >
+                            <i class="fas fa-share-alt me-2"></i>Share Product
+                        </button>
+                        <div class="collapse" id="shareProductOptions">
+                            <div class="d-grid gap-2">
+                                <button type="button" class="btn btn-success btn-sm" onclick="shareOnWhatsApp()">
+                                    <i class="fab fa-whatsapp me-2"></i>WhatsApp
+                                </button>
+                                <button type="button" class="btn btn-info btn-sm text-white" onclick="shareOnTelegram()">
+                                    <i class="fab fa-telegram-plane me-2"></i>Telegram
+                                </button>
+                                <button type="button" class="btn btn-outline-secondary btn-sm" onclick="copyProductLink()">
+                                    <i class="fas fa-link me-2"></i>Copy Link
+                                </button>
+                            </div>
+                            <input
+                                type="text"
+                                class="form-control form-control-sm mt-2"
+                                id="productShareLink"
+                                readonly
+                                aria-label="Product share link"
+                            >
+                        </div>
+                    </div>
+
                     <!-- Product Info -->
                     <div class="border-top pt-3">
                         <h6 class="mb-3">Product Information</h6>
@@ -146,6 +181,55 @@
 
 {% block extra_js %}
 <script>
+const productShareName = '{{ product.name|escapejs }}';
+const productSharePath = '{% url "product_detail" product.id %}';
+
+function getProductShareUrl() {
+    return `${window.location.origin}${productSharePath}`;
+}
+
+function openShareWindow(url) {
+    window.open(url, '_blank', 'noopener,noreferrer');
+}
+
+function shareOnWhatsApp() {
+    const shareUrl = getProductShareUrl();
+    const message = `Check out this product: ${productShareName} ${shareUrl}`;
+    openShareWindow(`https://wa.me/?text=${encodeURIComponent(message)}`);
+}
+
+function shareOnTelegram() {
+    const shareUrl = getProductShareUrl();
+    const message = `Check out this product: ${productShareName}`;
+    openShareWindow(`https://t.me/share/url?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(message)}`);
+}
+
+async function copyProductLink() {
+    const shareUrl = getProductShareUrl();
+    const shareLinkInput = document.getElementById('productShareLink');
+
+    try {
+        if (navigator.clipboard && window.isSecureContext) {
+            await navigator.clipboard.writeText(shareUrl);
+        } else if (shareLinkInput) {
+            shareLinkInput.value = shareUrl;
+            shareLinkInput.focus();
+            shareLinkInput.select();
+            const copied = document.execCommand('copy');
+            shareLinkInput.setSelectionRange(0, 0);
+            if (!copied) {
+                throw new Error('Copy command failed.');
+            }
+        } else {
+            throw new Error('No copy input available.');
+        }
+
+        showNotification('Product link copied.', 'success');
+    } catch (error) {
+        showNotification('Unable to auto-copy. Copy the link from the box.', 'warning');
+    }
+}
+
 function addToCart(productId) {
     var quantity = parseInt(document.getElementById('quantity').value) || 1;
 
@@ -289,10 +373,11 @@ function showNotification(message, type) {
 }
 
 document.addEventListener('DOMContentLoaded', function() {
+    const shareLinkInput = document.getElementById('productShareLink');
+    if (shareLinkInput) {
+        shareLinkInput.value = getProductShareUrl();
+    }
     updateCartUI();
 });
 </script>
 {% endblock %}
-
-
-
