@@ -91,7 +91,7 @@ def _db_value(name, default=''):
 _raw_secret_key = _env_or_config('SECRET_KEY', '')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = _to_bool(_env_or_config('DEBUG', 'True'), default=True)
+DEBUG = _to_bool(_env_or_config('DEBUG', 'False'), default=False)
 if RUNNING_ON_RENDER:
     # Never default to DEBUG=True on hosted runtime.
     DEBUG = _to_bool(os.getenv('DEBUG', 'False'), default=False)
@@ -572,4 +572,5 @@ TAX_RATE = config('TAX_RATE', default=0.18, cast=float)  # 18% GST
 
 # Frontend URL for email verification and password reset
 FRONTEND_URL = config('FRONTEND_URL', default='http://localhost:3000')
+
 
