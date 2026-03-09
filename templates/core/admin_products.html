@@ -47,10 +47,16 @@
                         <td>{{ product.id }}</td>
                         <td>
                             <div class="d-flex align-items-center">
-                                {% if product.images.first %}
-                                    <img src="{{ product.images.first.image.url }}" alt="{{ product.name }}" 
-                                         class="me-2" style="width: 40px; height: 40px; object-fit: cover;">
-                                {% endif %}
+                                {% with first_image=product.images.first %}
+                                    {% if first_image %}
+                                        <img src="{{ first_image.image.url }}" alt="{{ product.name }}"
+                                             class="me-2" style="width: 40px; height: 40px; object-fit: cover;">
+                                    {% else %}
+                                        <div class="me-2 bg-light d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                                            <i class="fas fa-image text-muted"></i>
+                                        </div>
+                                    {% endif %}
+                                {% endwith %}
                                 <div>
                                     <strong>{{ product.name }}</strong>
                                     <br>
@@ -104,6 +110,16 @@
                                 <button type="button" class="btn btn-info btn-sm product-action" data-action="view" data-id="{{ product.id }}">
                                     <i class="fas fa-eye"></i>
                                 </button>
+                                <button
+                                    type="button"
+                                    class="btn btn-primary btn-sm product-action"
+                                    data-action="share"
+                                    data-id="{{ product.id }}"
+                                    data-name="{{ product.name }}"
+                                    {% if product.status != 'active' %}disabled title="Only active products can be shared"{% endif %}
+                                >
+                                    <i class="fas fa-share-alt"></i>
+                                </button>
                                 <button type="button" class="btn btn-warning btn-sm product-action" data-action="toggle-status" data-id="{{ product.id }}" data-status="{{ product.status }}">
                                     <i class="fas fa-toggle-on"></i>
                                 </button>
@@ -143,6 +159,38 @@
     </div>
 </div>
 
+<!-- Product Share Modal -->
+<div class="modal fade" id="productShareModal" tabindex="-1" aria-labelledby="productShareModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="productShareModalLabel">Share Product</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p class="mb-2"><strong id="shareProductName">Product</strong></p>
+                <div class="input-group mb-3">
+                    <input type="text" class="form-control" id="shareProductLinkInput" readonly>
+                    <button type="button" class="btn btn-outline-secondary" onclick="copyShareLink()">
+                        <i class="fas fa-copy me-1"></i>Copy
+                    </button>
+                </div>
+                <div class="d-grid gap-2">
+                    <a class="btn btn-success" id="shareWhatsappLink" href="#" target="_blank" rel="noopener noreferrer">
+                        <i class="fab fa-whatsapp me-2"></i>Share on WhatsApp
+                    </a>
+                    <a class="btn btn-info text-white" id="shareTelegramLink" href="#" target="_blank" rel="noopener noreferrer">
+                        <i class="fab fa-telegram-plane me-2"></i>Share on Telegram
+                    </a>
+                    <a class="btn btn-outline-primary" id="shareOpenProductLink" href="#" target="_blank" rel="noopener noreferrer">
+                        <i class="fas fa-external-link-alt me-2"></i>Open Product Page
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <style>
 .table th {
     background-color: #f8f9fa;
@@ -170,9 +218,14 @@
 {% block extra_js %}
 <script>
 let products = [];
+let productShareModal = null;
 
 document.addEventListener('DOMContentLoaded', function() {
     loadProducts();
+    const productShareModalElement = document.getElementById('productShareModal');
+    if (productShareModalElement) {
+        productShareModal = new bootstrap.Modal(productShareModalElement);
+    }
     
     // Add event delegation for product action buttons
     document.addEventListener('click', function(e) {
@@ -184,6 +237,9 @@ document.addEventListener('DOMContentLoaded', function() {
             switch(action) {
                 case 'view':
                     viewProduct(productId);
+                    break;
+                case 'share':
+                    openShareProductModal(productId, button.dataset.name || '');
                     break;
                 case 'toggle-status':
                     toggleProductStatus(productId, button.dataset.status || '');
@@ -234,6 +290,79 @@ async function parseApiError(response, fallbackMessage) {
     }
 }
 
+function getPublicProductUrl(productId) {
+    return `${window.location.origin}/products/${productId}/`;
+}
+
+function openShareProductModal(productId, productName) {
+    const shareUrl = getPublicProductUrl(productId);
+    const cleanProductName = (productName || 'Product').trim();
+    const shareMessage = `Check out this product: ${cleanProductName}`;
+
+    const shareProductNameElement = document.getElementById('shareProductName');
+    if (shareProductNameElement) {
+        shareProductNameElement.textContent = cleanProductName;
+    }
+
+    const shareInput = document.getElementById('shareProductLinkInput');
+    if (shareInput) {
+        shareInput.value = shareUrl;
+    }
+
+    const whatsappLink = document.getElementById('shareWhatsappLink');
+    if (whatsappLink) {
+        whatsappLink.href = `https://wa.me/?text=${encodeURIComponent(`${shareMessage} ${shareUrl}`)}`;
+    }
+
+    const telegramLink = document.getElementById('shareTelegramLink');
+    if (telegramLink) {
+        telegramLink.href = `https://t.me/share/url?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(shareMessage)}`;
+    }
+
+    const openProductLink = document.getElementById('shareOpenProductLink');
+    if (openProductLink) {
+        openProductLink.href = shareUrl;
+    }
+
+    if (!productShareModal) {
+        const modalElement = document.getElementById('productShareModal');
+        if (modalElement) {
+            productShareModal = new bootstrap.Modal(modalElement);
+        }
+    }
+
+    if (productShareModal) {
+        productShareModal.show();
+    }
+}
+
+async function copyShareLink() {
+    const shareInput = document.getElementById('shareProductLinkInput');
+    const shareUrl = shareInput ? shareInput.value : '';
+    if (!shareUrl) {
+        alert('Share link not available.');
+        return;
+    }
+
+    try {
+        if (navigator.clipboard && window.isSecureContext) {
+            await navigator.clipboard.writeText(shareUrl);
+        } else if (shareInput) {
+            shareInput.focus();
+            shareInput.select();
+            const copied = document.execCommand('copy');
+            shareInput.setSelectionRange(0, 0);
+            if (!copied) {
+                throw new Error('Copy command failed.');
+            }
+        }
+
+        alert('Product link copied.');
+    } catch (error) {
+        alert(`Copy failed. Please copy manually:\n${shareUrl}`);
+    }
+}
+
 function viewProduct(productId) {
     const product = products.find(p => p.id == productId);
     if (!product) {
@@ -266,6 +395,7 @@ async function fetchProductDetails(productId) {
 
 function displayProductDetails(product) {
     const imageList = Array.isArray(product.images) ? product.images : [];
+    const canShare = (product.status || '').toLowerCase() === 'active';
     const imagesHtml = imageList.map(function(img) {
         if (typeof img === 'object' && (img.image || img.image_url)) {
             return `<img src="${img.image || img.image_url}" alt="${product.name}" class="product-image me-2 mb-2">`;
@@ -339,6 +469,9 @@ function displayProductDetails(product) {
                 <div class="btn-group">
                     <button type="button" class="btn btn-primary" onclick="editProduct('${product.id}')">
                         <i class="fas fa-edit"></i> Edit Product
+                    </button>
+                    <button type="button" class="btn btn-success" onclick="openShareProductModal('${product.id}', decodeURIComponent('${encodeURIComponent(product.name || '')}'))" ${canShare ? '' : 'disabled title="Only active products can be shared"'}>
+                        <i class="fas fa-share-alt"></i> Share
                     </button>
                     <button type="button" class="btn btn-warning" onclick="toggleProductStatus('${product.id}', '${product.status || ''}')">
                         <i class="fas fa-toggle-on"></i> Toggle Status
@@ -1049,7 +1182,7 @@ function addProduct() {
             formData.append('image', imageFile);
         }
         
-        console.log('FormData created with', formData.entries().length, 'fields');
+        console.log('FormData prepared for product creation request.');
         
         // Get CSRF token
         const csrftoken = getCookie('csrftoken');
@@ -1105,8 +1238,15 @@ function addProduct() {
             console.log('Response data:', data);
             
             if (data.success) {
-                alert(data.message || 'Product added successfully!');
-                bootstrap.Modal.getInstance(document.getElementById('addProductModal')).hide();
+                const successMessageParts = [data.message || 'Product added successfully!'];
+                if (data.warning) {
+                    successMessageParts.push(`Warning: ${data.warning}`);
+                }
+                alert(successMessageParts.join('\n\n'));
+                const addModalElement = document.getElementById('addProductModal');
+                if (addModalElement) {
+                    bootstrap.Modal.getOrCreateInstance(addModalElement).hide();
+                }
                 location.reload();
             } else {
                 // Handle errors
@@ -1161,3 +1301,4 @@ function getCookie(name) {
 }
 </script>
 {% endblock %}
+
