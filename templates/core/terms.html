@@ -1,73 +1,140 @@
-﻿{% extends 'core/base.html' %}
+{% extends 'core/base.html' %}
 
-{% block title %}Terms of Service - {% if site_settings %}{{ site_settings.site_name }}{% else %}SwiftCart{% endif %}{% endblock %}
+{% block title %}Terms & Conditions - {% if site_settings %}{{ site_settings.site_name }}{% else %}SwiftCart{% endif %}{% endblock %}
 
 {% block content %}
 <div class="container py-5">
     <div class="row">
         <div class="col-lg-9 mx-auto">
-            <h1 class="mb-4">Terms of Service</h1>
+            <h1 class="mb-4 fw-bold">Terms & Conditions</h1>
             <p class="text-muted">
-                By using {% if site_settings %}{{ site_settings.site_name }}{% else %}SwiftCart{% endif %}, you agree to the terms below.
+                Welcome to {% if site_settings %}{{ site_settings.site_name }}{% else %}SwiftCart{% endif %}. By accessing or using our platform, you agree to comply with these Terms & Conditions.
             </p>
 
+            <!-- Section -->
             <div class="card shadow-sm mb-4">
                 <div class="card-body">
-                    <h5>1. Account Responsibility</h5>
+                    <h5>1. Eligibility</h5>
                     <p class="mb-0">
-                        You are responsible for keeping your account credentials secure and for activity performed through your account.
+                        You must be at least 18 years old or using the platform under parental supervision. By using our services, you confirm that you have the legal capacity to enter into this agreement.
                     </p>
                 </div>
             </div>
 
+            <!-- Section -->
             <div class="card shadow-sm mb-4">
                 <div class="card-body">
-                    <h5>2. Orders and Payments</h5>
-                    <p class="mb-0">
-                        Product pricing, availability, and shipping timelines may vary. Orders may be canceled or declined in case of invalid payment, fraud checks, or stock issues.
-                    </p>
-                </div>
-            </div>
-
-            <div class="card shadow-sm mb-4">
-                <div class="card-body">
-                    <h5>3. Seller and Buyer Conduct</h5>
+                    <h5>2. Account & Security</h5>
                     <ul class="mb-0">
-                        <li>No illegal, fraudulent, or abusive activity</li>
-                        <li>No misuse of platform APIs or user data</li>
-                        <li>No upload of harmful or misleading content</li>
+                        <li>You are responsible for maintaining account confidentiality</li>
+                        <li>All activities under your account are your responsibility</li>
+                        <li>Notify us immediately in case of unauthorized access</li>
                     </ul>
                 </div>
             </div>
 
+            <!-- Section -->
             <div class="card shadow-sm mb-4">
                 <div class="card-body">
-                    <h5>4. Intellectual Property</h5>
+                    <h5>3. Orders & Payments</h5>
+                    <ul class="mb-0">
+                        <li>All prices are subject to change without notice</li>
+                        <li>Orders may be cancelled due to stock, fraud, or pricing errors</li>
+                        <li>Payments must be completed through approved methods</li>
+                        <li>Refunds will follow our Refund Policy</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Section -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-body">
+                    <h5>4. Shipping & Delivery</h5>
+                    <ul class="mb-0">
+                        <li>Delivery timelines are estimates and may vary</li>
+                        <li>We are not responsible for delays caused by third-party couriers</li>
+                        <li>Users must provide accurate delivery information</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Section -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-body">
+                    <h5>5. Seller & Buyer Conduct</h5>
+                    <ul class="mb-0">
+                        <li>No illegal, fraudulent, or abusive activity</li>
+                        <li>No posting of misleading or harmful content</li>
+                        <li>No misuse of platform data, APIs, or services</li>
+                        <li>Violation may lead to account suspension or ban</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Section -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-body">
+                    <h5>6. Returns & Refunds</h5>
+                    <ul class="mb-0">
+                        <li>Returns are accepted only within the specified return window</li>
+                        <li>Products must be unused and in original condition</li>
+                        <li>Refunds will be processed within a reasonable time</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Section -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-body">
+                    <h5>7. Intellectual Property</h5>
                     <p class="mb-0">
-                        Platform branding, content, and software are protected by applicable intellectual property laws. Do not copy or reuse without permission.
+                        All content, logos, designs, and software on the platform are the property of the company and protected by applicable laws. Unauthorized use is strictly prohibited.
                     </p>
                 </div>
             </div>
 
+            <!-- Section -->
             <div class="card shadow-sm mb-4">
                 <div class="card-body">
-                    <h5>5. Limitation of Liability</h5>
+                    <h5>8. Limitation of Liability</h5>
                     <p class="mb-0">
-                        To the maximum extent allowed by law, the platform is provided on an "as is" basis without warranties of uninterrupted operation.
+                        We are not liable for any indirect, incidental, or consequential damages arising from the use of our platform. Services are provided "as is" without warranties.
                     </p>
                 </div>
             </div>
 
+            <!-- Section -->
             <div class="card shadow-sm mb-4">
                 <div class="card-body">
-                    <h5>6. Changes to Terms</h5>
+                    <h5>9. Termination</h5>
                     <p class="mb-0">
-                        We may update these terms from time to time. Continued use of the platform after updates means you accept the revised terms.
+                        We reserve the right to suspend or terminate accounts that violate our policies without prior notice.
                     </p>
                 </div>
             </div>
 
-            <p class="text-muted small mb-0">Last updated: February 23, 2026</p>
+            <!-- Section -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-body">
+                    <h5>10. Changes to Terms</h5>
+                    <p class="mb-0">
+                        We may update these Terms at any time. Continued use of the platform means you accept the updated Terms.
+                    </p>
+                </div>
+            </div>
+
+            <!-- Section -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-body">
+                    <h5>11. Contact Information</h5>
+                    <p class="mb-0">
+                        For any questions or concerns, contact us at: <br>
+                        📧 support@swiftcart.com
+                    </p>
+                </div>
+            </div>
+
+            <p class="text-muted small mb-0">Last updated: March 22, 2026</p>
         </div>
     </div>
 </div>
