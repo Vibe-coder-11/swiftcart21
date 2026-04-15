@@ -155,7 +155,7 @@ class UserRegistrationView(generics.CreateAPIView):
                 }, status=status.HTTP_400_BAD_REQUEST)
             
             user = serializer.save()
-            
+            login(request, user)
             # Generate JWT tokens
             refresh = RefreshToken.for_user(user)
             
