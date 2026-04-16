@@ -1,8 +1,30 @@
-﻿{% extends 'core/base.html' %}
+{% extends 'core/base.html' %}
 
 {% block title %}Home - {% if site_settings %}{{ site_settings.site_name }}{% else %}SwiftCart{% endif %}{% endblock %}
 
 {% block content %}
+
+<!-- 3D Background -->
+<div id="three-bg"></div>
+
+<style>
+#three-bg {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: -1;
+    overflow: hidden;
+}
+
+.hero-section,
+section {
+    position: relative;
+    z-index: 1;
+}
+</style>
+
 <!-- Hero Section -->
 <section class="hero-section">
     <div class="container text-center">
@@ -19,9 +41,7 @@
         <div class="row justify-content-center">
             <div class="col-md-8">
                 <form action="{% url 'products' %}" method="GET" class="row g-3">
-                    <div class="col-md-9">
-
-                    </div>
+                    <div class="col-md-9"></div>
                 </form>
             </div>
         </div>
@@ -37,38 +57,32 @@
                 <p class="text-muted">Connecting quality sellers with customers worldwide</p>
             </div>
         </div>
-        
+
         <div class="row g-4">
             <div class="col-md-4">
                 <div class="card feature-card h-100 shadow-sm">
                     <div class="card-body text-center">
-                        <div class="mb-3">
-                            <i class="fas fa-shield-alt fa-3x text-primary"></i>
-                        </div>
+                        <i class="fas fa-shield-alt fa-3x text-primary mb-3"></i>
                         <h5 class="card-title">Secure Shopping</h5>
                         <p class="card-text">Shop with confidence knowing your transactions are protected and secure.</p>
                     </div>
                 </div>
             </div>
-            
+
             <div class="col-md-4">
                 <div class="card feature-card h-100 shadow-sm">
                     <div class="card-body text-center">
-                        <div class="mb-3">
-                            <i class="fas fa-truck fa-3x text-success"></i>
-                        </div>
+                        <i class="fas fa-truck fa-3x text-success mb-3"></i>
                         <h5 class="card-title">Fast Delivery</h5>
                         <p class="card-text">Quick and reliable delivery from verified sellers across the globe.</p>
                     </div>
                 </div>
             </div>
-            
+
             <div class="col-md-4">
                 <div class="card feature-card h-100 shadow-sm">
                     <div class="card-body text-center">
-                        <div class="mb-3">
-                            <i class="fas fa-star fa-3x text-warning"></i>
-                        </div>
+                        <i class="fas fa-star fa-3x text-warning mb-3"></i>
                         <h5 class="card-title">Quality Products</h5>
                         <p class="card-text">Curated selection of high-quality products from trusted sellers.</p>
                     </div>
@@ -88,7 +102,7 @@
                 <p class="text-muted">Trusted sellers on our platform</p>
             </div>
         </div>
-        
+
         <div class="row g-4">
             {% for banner in active_banners %}
             <div class="col-md-6">
@@ -117,22 +131,10 @@
 <section class="py-5 bg-dark text-white">
     <div class="container">
         <div class="row text-center">
-            <div class="col-md-3">
-                <h2 class="fw-bold">1000+</h2>
-                <p>Products</p>
-            </div>
-            <div class="col-md-3">
-                <h2 class="fw-bold">500+</h2>
-                <p>Sellers</p>
-            </div>
-            <div class="col-md-3">
-                <h2 class="fw-bold">50K+</h2>
-                <p>Happy Customers</p>
-            </div>
-            <div class="col-md-3">
-                <h2 class="fw-bold">24/7</h2>
-                <p>Support</p>
-            </div>
+            <div class="col-md-3"><h2 class="fw-bold">1000+</h2><p>Products</p></div>
+            <div class="col-md-3"><h2 class="fw-bold">500+</h2><p>Sellers</p></div>
+            <div class="col-md-3"><h2 class="fw-bold">50K+</h2><p>Happy Customers</p></div>
+            <div class="col-md-3"><h2 class="fw-bold">24/7</h2><p>Support</p></div>
         </div>
     </div>
 </section>
@@ -140,6 +142,7 @@
 <!-- Latest Products Section -->
 <section class="py-5 bg-light">
     <div class="container">
+
         <div class="row text-center mb-5">
             <div class="col">
                 <h2 class="fw-bold">Latest Products</h2>
@@ -147,288 +150,102 @@
             </div>
         </div>
 
-        <div class="row justify-content-center mb-4">
-            <div class="col-lg-10">
-                <form action="{% url 'products' %}" method="GET" class="row g-2">
-                    <div class="col-md-8">
-                        <input type="search" class="form-control" name="search" placeholder="Search products...">
-                    </div>
-                    <div class="col-md-4 d-grid">
-                        <button type="submit" class="btn btn-outline-primary">Search Products</button>
-                    </div>
-                </form>
-            </div>
-        </div>
-
-        {% if categories %}
-        <div class="d-flex flex-wrap justify-content-center gap-2 mb-4">
-            <a href="{% url 'products' %}" class="btn btn-sm btn-outline-primary">All Categories</a>
-            {% for category in categories %}
-            <a href="{% url 'products' %}?category={{ category.id }}" class="btn btn-sm btn-outline-secondary">
-                {{ category.name }}
-            </a>
-            {% endfor %}
-        </div>
-        {% endif %}
-        
         <div class="row g-4">
             {% for product in latest_products %}
             <div class="col-sm-6 col-lg-3 d-flex">
                 <div class="card product-card shadow-sm h-100 w-100">
                     {% with first_image=product.images.first %}
                     {% if first_image %}
-                        <img src="{{ first_image.image.url }}" class="card-img-top product-image" alt="{{ product.name }}" style="height: 200px; object-fit: cover;">
-                    {% else %}
-                        <div class="card-img-top bg-light d-flex align-items-center justify-content-center" style="height: 200px;">
-                            <i class="fas fa-image fa-3x text-muted"></i>
-                        </div>
+                        <img src="{{ first_image.image.url }}" class="card-img-top" style="height:200px;object-fit:cover;">
                     {% endif %}
                     {% endwith %}
                     <div class="card-body d-flex flex-column">
-                        <h5 class="card-title">{{ product.name }}</h5>
-                        <p class="card-text text-muted small">{{ product.short_description|truncatewords:10 }}</p>
-                        
+                        <h5>{{ product.name }}</h5>
+
                         <div class="mt-auto">
-                            <div class="d-flex justify-content-between align-items-center mb-2">
-                                <div>
-                                    {% if product.compare_price %}
-                                        <span class="text-muted text-decoration-line-through">INR {{ product.compare_price }}</span>
-                                        <span class="fw-bold text-success">INR {{ product.price }}</span>
-                                    {% else %}
-                                        <span class="fw-bold">INR {{ product.price }}</span>
-                                    {% endif %}
-                                    {% if product.discount_percentage > 0 %}
-                                        <span class="badge bg-danger ms-2">{{ product.discount_percentage }}% OFF</span>
-                                    {% endif %}
-                                </div>
-                                {% if product.is_in_stock %}
-                                    <span class="badge bg-success">In Stock</span>
-                                {% else %}
-                                    <span class="badge bg-danger">Out of Stock</span>
-                                {% endif %}
-                            </div>
-                            
-                            <div class="d-grid gap-2">
-                                <a href="{% url 'product_detail' product.id %}" class="btn btn-outline-primary btn-sm">
-                                    <i class="fas fa-eye me-1"></i>View Details
-                                </a>
-                                <a href="{% url 'checkout_details' product.id %}" class="btn btn-success btn-sm">
-                                    <i class="fas fa-bolt me-1"></i>Buy Product
-                                </a>
-                                <button class="btn btn-primary btn-sm" onclick="addToCart('{{ product.id }}')" {% if not product.is_in_stock %}disabled{% endif %}>
-                                    <i class="fas fa-shopping-cart me-1"></i>Add to Cart
-                                </button>
+                            <span class="fw-bold">INR {{ product.price }}</span>
+
+                            <div class="d-grid gap-2 mt-2">
+                                <a href="{% url 'product_detail' product.id %}" class="btn btn-outline-primary btn-sm">View</a>
+                                <a href="{% url 'checkout_details' product.id %}" class="btn btn-success btn-sm">Buy</a>
+                                <button class="btn btn-primary btn-sm" onclick="addToCart('{{ product.id }}')">Cart</button>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
-            {% empty %}
-            <div class="col-12 text-center py-5">
-                <p class="text-muted">No products available at the moment.</p>
-            </div>
             {% endfor %}
         </div>
-        
-        <div class="text-center mt-4">
-            <a href="{% url 'products' %}" class="btn btn-primary">
-                View All Products <i class="fas fa-arrow-right ms-2"></i>
-            </a>
-        </div>
-    </div>
-</section>
 
-<!-- Newsletter Section -->
-<section class="py-5">
-    <div class="container">
-        <div class="row justify-content-center">
-            <div class="col-md-8 text-center">
-                <h3 class="fw-bold mb-3">Stay Updated</h3>
-                <p class="text-muted mb-4">Subscribe to our newsletter for the latest products and offers</p>
-                <form id="newsletterForm" class="row g-3">
-                    <div class="col-md-9">
-                        <input type="email" class="form-control" id="newsletterEmail" placeholder="Enter your email" required>
-                    </div>
-                    <div class="col-md-3">
-                        <button type="submit" class="btn btn-primary w-100">Subscribe</button>
-                    </div>
-                </form>
-            </div>
-        </div>
     </div>
 </section>
 
 {% endblock %}
 
 {% block extra_js %}
-<script>
-// Get user authentication status from data attribute
-var userAuthenticated = document.body.getAttribute('data-user-authenticated') === 'true';
 
-// Newsletter functionality
-document.getElementById('newsletterForm').addEventListener('submit', function(e) {
-    e.preventDefault();
-    
-    const email = document.getElementById('newsletterEmail').value;
-    
-    fetch('/api/newsletter/subscribe/', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRFToken': getCookie('csrftoken')
-        },
-        body: JSON.stringify({
-            'email': email
-        })
-    })
-    .then(function(response) {
-        return response.json();
-    })
-    .then(function(data) {
-        if (data.success) {
-            showNotification(data.message, 'success');
-            document.getElementById('newsletterEmail').value = '';
-        } else {
-            showNotification(data.message, 'error');
-        }
-    })
-    .catch(function(error) {
-        console.error('Newsletter subscription error:', error);
-        showNotification('Failed to subscribe to newsletter', 'error');
-    });
+<!-- Three.js -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+<script>
+// 3D Scene
+const scene = new THREE.Scene();
+
+const camera = new THREE.PerspectiveCamera(
+75,
+window.innerWidth/window.innerHeight,
+0.1,
+1000
+);
+
+const renderer = new THREE.WebGLRenderer({alpha:true});
+renderer.setSize(window.innerWidth,window.innerHeight);
+document.getElementById("three-bg").appendChild(renderer.domElement);
+
+// Objects
+const geometry = new THREE.BoxGeometry();
+const material = new THREE.MeshStandardMaterial({
+color:0x00aaff,
+metalness:0.6,
+roughness:0.2
 });
 
-function addToCart(productId) {
-    fetch('/api/cart/add/', {
-        method: 'POST',
-        headers: getAuthHeaders(true),
-        body: JSON.stringify({
-            'product_id': productId,
-            'quantity': 1
-        })
-    })
-    .then(async function(response) {
-        const data = await parseResponseData(response);
-        if (response.status === 401 || response.status === 403) {
-            showNotification('Please login to add products to cart', 'warning');
-            setTimeout(function() {
-                window.location.href = '{% url "login" %}';
-            }, 1200);
-            return;
-        }
+const cubes=[];
 
-        if (!response.ok || !data.success) {
-            throw new Error(data.error || 'Failed to add product to cart');
-        }
-
-        showNotification(data.message || 'Product added to cart', 'success');
-        updateCartUI();
-    })
-    .catch(function(error) {
-        console.error('Error adding to cart:', error);
-        showNotification(error.message || 'Failed to add product to cart', 'error');
-    });
+for(let i=0;i<12;i++){
+let cube=new THREE.Mesh(geometry,material);
+cube.position.x=(Math.random()-0.5)*10;
+cube.position.y=(Math.random()-0.5)*10;
+cube.position.z=(Math.random()-0.5)*10;
+scene.add(cube);
+cubes.push(cube);
 }
 
-function getAuthHeaders(isJson) {
-    const headers = {};
-    if (isJson) {
-        headers['Content-Type'] = 'application/json';
-    }
+// Light
+const light=new THREE.PointLight(0xffffff,1.2);
+light.position.set(5,5,5);
+scene.add(light);
 
-    const csrfToken = getCookie('csrftoken') || getCsrfFromDom();
-    if (csrfToken) {
-        headers['X-CSRFToken'] = csrfToken;
-    }
+camera.position.z=6;
 
-    const isSessionAuthenticated = document.body.getAttribute('data-user-authenticated') === 'true';
-    const accessToken = localStorage.getItem('access_token');
-    if (!isSessionAuthenticated && accessToken) {
-        headers['Authorization'] = `Bearer ${accessToken}`;
-    }
-
-    return headers;
+// Animation
+function animate(){
+requestAnimationFrame(animate);
+cubes.forEach(c=>{
+c.rotation.x+=0.01;
+c.rotation.y+=0.01;
+});
+renderer.render(scene,camera);
 }
+animate();
 
-function getCsrfFromDom() {
-    const tokenInput = document.querySelector('input[name="csrfmiddlewaretoken"]');
-    return tokenInput ? tokenInput.value : '';
-}
-
-function parseResponseData(response) {
-    const contentType = response.headers.get('content-type') || '';
-    if (contentType.includes('application/json')) {
-        return response.json();
-    }
-    return Promise.resolve({});
-}
-
-function updateCartUI() {
-    // Update cart count in UI
-    fetch('/api/cart/', {
-        headers: getAuthHeaders(false)
-    })
-        .then(function(response) {
-            if (!response.ok) {
-                return {};
-            }
-            return response.json();
-        })
-        .then(function(data) {
-            const cartBadge = document.querySelector('.cart-badge');
-            if (!cartBadge) {
-                return;
-            }
-
-            const totalItems = Number(data.total_items || 0);
-            cartBadge.textContent = totalItems;
-            cartBadge.style.display = totalItems > 0 ? 'inline-block' : 'none';
-        })
-        .catch(function() {
-            const cartBadge = document.querySelector('.cart-badge');
-            if (cartBadge) {
-                cartBadge.textContent = '0';
-                cartBadge.style.display = 'none';
-            }
-        });
-}
-
-function getCookie(name) {
-    let cookieValue = null;
-    if (document.cookie && document.cookie !== '') {
-        const cookies = document.cookie.split(';');
-        for (let i = 0; i < cookies.length; i++) {
-            const cookie = cookies[i].trim();
-            if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                break;
-            }
-        }
-    }
-    return cookieValue;
-}
-
-function showNotification(message, type) {
-    // Simple notification system
-    const notification = document.createElement('div');
-    notification.className = 'alert alert-' + type + ' alert-dismissible fade show position-fixed';
-    notification.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
-    notification.innerHTML = message + '<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>';
-    
-    document.body.appendChild(notification);
-    
-    // Auto-remove after 3 seconds
-    setTimeout(function() {
-        if (notification.parentNode) {
-            notification.parentNode.removeChild(notification);
-        }
-    }, 3000);
-}
-
-// Update cart when page loads
-document.addEventListener('DOMContentLoaded', function() {
-    updateCartUI();
+// Responsive
+window.addEventListener("resize",()=>{
+camera.aspect=window.innerWidth/window.innerHeight;
+camera.updateProjectionMatrix();
+renderer.setSize(window.innerWidth,window.innerHeight);
 });
 </script>
+
 {% endblock %}
 
